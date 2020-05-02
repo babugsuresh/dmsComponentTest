@@ -1,0 +1,39 @@
+spring:
+Environment:
+      - dit1
+
+PdsURI: /calculator.asmx
+XrsURI: /webservicesserver/numberconversion.wso
+TariffURI: kkkk
+IlmsURI: lll
+
+PDSHosts:
+      - 'http://www.dneonline.com'
+      - 'http://www.dneonline.com'
+      - dit3
+      - dit4
+      - dit5
+      - dit6
+XRSHosts:
+      - 'http://www.dataaccess.com'
+      - 'http://www.dataaccess.com'
+      - dit3
+      - dit4
+      - dit5
+      - dit6
+TariffHosts:
+      - dit1
+      - dit2
+      - dit3
+      - dit4
+      - dit5
+      - dit6
+ILMSHosts:
+      - dit1
+      - dit2
+      - dit3
+      - dit4
+      - dit5
+      - dit6
+
+ReportDestination: frfrfrf
