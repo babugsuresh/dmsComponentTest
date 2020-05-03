@@ -1,0 +1,10 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <tem:GetCurrencyRate>
+         <!--Optional:-->
+         <tem:Currency>INR</tem:Currency>
+         <tem:RateDate>2020-05-03T00:00:00</tem:RateDate>
+      </tem:GetCurrencyRate>
+   </soapenv:Body>
+</soapenv:Envelope>

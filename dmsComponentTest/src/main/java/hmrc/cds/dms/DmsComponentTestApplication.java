@@ -9,10 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -32,7 +29,6 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -42,15 +38,6 @@ import com.ibm.wsdl.PortTypeImpl;
 
 @SpringBootApplication
 public class DmsComponentTestApplication implements CommandLineRunner {
-
-	public static Map<String, String> serviceTyeps;
-	static {
-		serviceTyeps = new HashMap<>();
-		serviceTyeps.put("calculator_1.wsdl", "PDS");
-		serviceTyeps.put("numberconversion_1.wsdl", "XRS");
-		serviceTyeps.put("Test1", "ILMS");
-		serviceTyeps.put("Test1", "Tariff");
-	}
 
 	@Autowired
 	private YAMLConfig myConfig;
@@ -64,13 +51,10 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 	}
 
 	public void run(String... args) throws UnsupportedOperationException, SOAPException, IOException, Exception {
-		/*
-		 * System.out.println("using environment: " + myConfig.getEnvironment());
-		 * System.out.println("name: " + myConfig.getPdsURI());
-		 * System.out.println("servers: " + myConfig.getTariffURI());
-		 */
 
 		List<String> envs = myConfig.getEnvironment();
+
+		// System.out.println("SystemMapping: "+myConfig.SystemMapping.toString());
 
 		SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
 		SOAPConnection soapConnection = soapConnectionFactory.createConnection();
@@ -82,104 +66,104 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		for (String wsdlName : wsdlNames) {
 
 			// Print the names of files and directories
-			System.out.println(wsdlName);
+			System.out.println("\nService wsdlName: " + wsdlName);
 			File wsdlFile = new File(wsdlDir, wsdlName);
 
 			String endpoint = null;
 			String soapenvelope = null;
 			for (String env : envs) {
-				System.out.println("env Executing for ---: " + env);
 
 				String systemtocall = null;
 
-				for (Map.Entry<String, String> entry : serviceTyeps.entrySet()) {
-					if (entry.getKey().equalsIgnoreCase(wsdlName)) {
-						systemtocall = entry.getValue();
-						System.out.println("systemtocall: " + systemtocall);
-
+				for (Map.Entry<String, String> entry : myConfig.SystemMapping.entrySet()) {
+					String key = entry.getKey();
+					if (wsdlName.equalsIgnoreCase(key.substring(2))) {
+						String value = entry.getValue();
+						systemtocall = value;
+						// System.out.println("Matching found for: "+wsdlName);
 					}
+
 				}
+
+				System.out.println("Env Executing for: " + env + ", System to call for " + wsdlName
+						+ " WSDL Service is: " + systemtocall);
 
 				if (systemtocall.equalsIgnoreCase("PDS")) {
 					endpoint = getPdsendpoint(env, envs.indexOf(env));
-					endpoint = endpoint+myConfig.getPdsURI();
+					endpoint = endpoint + myConfig.getPdsURI();
 
 				} else if (systemtocall.equalsIgnoreCase("ILMS")) {
 					endpoint = getIlamsendpoint(env, envs.indexOf(env));
-					endpoint = endpoint+myConfig.getIlmsURI();
+					endpoint = endpoint + myConfig.getIlmsURI();
 
 				} else if (systemtocall.equalsIgnoreCase("Tariff")) {
 					endpoint = getTariffendpoint(env, envs.indexOf(env));
-					endpoint = endpoint+myConfig.getTariffURI();
+					endpoint = endpoint + myConfig.getTariffURI();
 
 				} else if (systemtocall.equalsIgnoreCase("XRS")) {
 					endpoint = getXrsendpoint(env, envs.indexOf(env));
-					endpoint = endpoint+myConfig.getXrsURI();
+					endpoint = endpoint + myConfig.getXrsURI();
 
 				}
+				
+				
+				
+				
+				
+				
+				
 
 				List<Operation> operationList = getPortTypeOperations(wsdlFile.toURI().toString());
 
-				// ListIterator<Operation> listIterator = operationList.listIterator();
-				System.out.println("operationList Length:" + operationList.size());
+				System.out.println("Total Number of operations in "+wsdlName+" : "+operationList.size());
 
 				for (Operation opname : operationList) {
-					System.out.println("\nOperationName: " + opname.getName());
+
 					soapenvelope = getRequestEnvelopeToString(opname.getName());
-					System.setProperty("java.net.useSystemProxies", "true");
-					//System.out.println("SOAPenvelopetoString: " + soapenvelope);
+					System.out.println("\nOperationName: " + opname.getName() + "\nis there a Request XML exists?: "
+							+ !soapenvelope.equalsIgnoreCase("empty"));
 
-					// call soap here
-					
-					System.out.println("SOAP endpoint: " + endpoint);
-					
-					InputStream is = new ByteArrayInputStream(soapenvelope.getBytes());
-				    SOAPMessage request = MessageFactory.newInstance().createMessage(null, is);
-				    MimeHeaders headers = request.getMimeHeaders();
-				    
-				    headers.setHeader("Content-Type", "application/xml");
-				    request.saveChanges();
-				    
+					if (!soapenvelope.equalsIgnoreCase("empty")) {
+						System.setProperty("java.net.useSystemProxies", "true");
+						// System.out.println("SOAPenvelopetoString: " + soapenvelope);
+						
+						System.out.println("SOAP endpoint to Call: " + endpoint);
 
-				    SOAPMessage soapResponse = soapConnection.call(request, endpoint);
+						InputStream is = new ByteArrayInputStream(soapenvelope.getBytes());
+						SOAPMessage request = MessageFactory.newInstance().createMessage(null, is);
+						MimeHeaders headers = request.getMimeHeaders();
 
-				   //System.out.println(printSOAPResponse(soapResponse));
-				   
-				   TransformerFactory transformerFactory = TransformerFactory.newInstance();
-				    Transformer transformer = transformerFactory.newTransformer();
-				    Source sourceContent = soapResponse.getSOAPPart().getContent();
-				    System.out.print("\nResponse SOAP Message = ");
-				    StreamResult result = new StreamResult(System.out);
-				    transformer.transform(sourceContent, result);
-					
-				    //System.out.println("Response Suresh: "+sourceContent);
-					
+						headers.setHeader("Content-Type", "application/xml");
+						request.saveChanges();
+
+						SOAPMessage soapResponse = soapConnection.call(request, endpoint);
+
+						// System.out.println(printSOAPResponse(soapResponse));
+
+						TransformerFactory transformerFactory = TransformerFactory.newInstance();
+						Transformer transformer = transformerFactory.newTransformer();
+						Source sourceContent = soapResponse.getSOAPPart().getContent();
+						System.out.print("\nResponse SOAP Message = ");
+						StreamResult result = new StreamResult(System.out);
+						// transformer.transform(sourceContent, result);
+
+						// System.out.println("Response Suresh: "+sourceContent);
+					}
+
 				}
-
-				
 
 			}
 
 		}
 
 	}
-	
-	
-//	private static void printSOAPResponse(SOAPMessage soapResponse) throws Exception {
-//	    TransformerFactory transformerFactory = TransformerFactory.newInstance();
-//	    Transformer transformer = transformerFactory.newTransformer();
-//	    Source sourceContent = soapResponse.getSOAPPart().getContent();
-//	    System.out.print("\nResponse SOAP Message = ");
-//	    StreamResult result = new StreamResult(System.out);
-//	    transformer.transform(sourceContent, result);
-//	}
 
 	private String getPdsendpoint(String env, int index) {
 		String endpoint = null;
 		List<String> pdshosts = myConfig.getPDSHosts();
 		for (String pdshost : pdshosts) {
 			if (index == pdshosts.indexOf(pdshost)) {
-				//System.out.println("pdshost---: " + pdshost);
+				// System.out.println("pdshost---: " + pdshost);
 				endpoint = pdshost;
 			}
 
@@ -192,7 +176,7 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		List<String> xrahosts = myConfig.getXRSHosts();
 		for (String xrshost : xrahosts) {
 			if (index == xrahosts.indexOf(xrshost)) {
-				//System.out.println("xrshost---: " + xrshost);
+				// System.out.println("xrshost---: " + xrshost);
 				endpoint = xrshost;
 			}
 
@@ -205,7 +189,7 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		List<String> tariffhosts = myConfig.getTariffHosts();
 		for (String tariffhost : tariffhosts) {
 			if (index == tariffhosts.indexOf(tariffhost)) {
-				//System.out.println("tariffhost---: " + tariffhost);
+				// System.out.println("tariffhost---: " + tariffhost);
 				endpoint = tariffhost;
 			}
 
@@ -218,41 +202,13 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		List<String> ilmshosts = myConfig.getILMSHosts();
 		for (String ilmshost : ilmshosts) {
 			if (index == ilmshosts.indexOf(ilmshost)) {
-				//System.out.println("ilmshost---: " + ilmshost);
+				// System.out.println("ilmshost---: " + ilmshost);
 				endpoint = ilmshost;
 			}
 
 		}
 		return endpoint;
 	}
-
-	/*
-	 * private String getSoapEnvelope() {
-	 * 
-	 * File wsdlDir = new File(BASEDIR, "src/main/resources/wsdls/99 Adapters");
-	 * 
-	 * String[] wsdlNames; wsdlNames = wsdlDir.list(); String envelope = "empty";
-	 * 
-	 * for (String wsdlName : wsdlNames) {
-	 * 
-	 * // Print the names of files and directories System.out.println(wsdlName);
-	 * File wsdlFile = new File(wsdlDir, wsdlName);
-	 * 
-	 * List<Operation> operationList =
-	 * getPortTypeOperations(wsdlFile.toURI().toString());
-	 * 
-	 * ListIterator<Operation> listIterator = operationList.listIterator();
-	 * 
-	 * while (listIterator.hasNext()) {
-	 * System.out.println(listIterator.next().getName());
-	 * 
-	 * // Get me matching envelope as a string envelope =
-	 * getRequestEnvelopeToString(listIterator.next().getName());
-	 * 
-	 * } }
-	 * 
-	 * return envelope; }
-	 */
 
 	private String getRequestEnvelopeToString(String operation) {
 
@@ -273,8 +229,9 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		return requestenvelope;
 	}
 
+	@SuppressWarnings("unchecked")
 	private static List<Operation> getPortTypeOperations(String wsdlUrl) {
-		List<Operation> operationList = new ArrayList();
+		List<Operation> operationList = new ArrayList<Operation>();
 
 		try {
 			WSDLFactory factory = WSDLFactory.newInstance();
@@ -283,6 +240,7 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 			// pass the location/url to the reader for parsing and get list of operations
 			Definition wsdlInstance = reader.readWSDL(wsdlUrl);
 
+			@SuppressWarnings("unchecked")
 			Map<String, PortTypeImpl> defMap = wsdlInstance.getAllPortTypes();
 			Collection<PortTypeImpl> collection = defMap.values();
 			for (PortTypeImpl portType : collection) {

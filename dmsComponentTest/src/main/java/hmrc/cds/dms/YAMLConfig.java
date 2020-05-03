@@ -1,7 +1,9 @@
 package hmrc.cds.dms;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -24,9 +26,16 @@ public class YAMLConfig {
     private List<String> XRSHosts = new ArrayList<>();
     private List<String> TariffHosts = new ArrayList<>();
     private List<String> ILMSHosts = new ArrayList<>();
+    Map<String,String> SystemMapping = new HashMap<String, String>();
     
 	
-    public List<String> getEnvironment() {
+    public Map<String, String> getSystemMapping() {
+		return SystemMapping;
+	}
+	public void setSystemMapping(Map<String, String> systemMapping) {
+		SystemMapping = systemMapping;
+	}
+	public List<String> getEnvironment() {
 		return Environment;
 	}
 	public void setEnvironment(List<String> environment) {
