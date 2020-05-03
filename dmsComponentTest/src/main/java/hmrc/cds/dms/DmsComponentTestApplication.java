@@ -41,6 +41,7 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 
 	@Autowired
 	private YAMLConfig myConfig;
+	
 
 	private static final String BASEDIR = null;
 
