@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -32,6 +33,7 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -43,9 +45,6 @@ import com.ibm.wsdl.PortTypeImpl;
 @SpringBootApplication
 public class DmsComponentTestApplication implements CommandLineRunner {
 
-	@Autowired
-	private YAMLConfig myConfig;
-
 	private static final String BASEDIR = null;
 
 	public static void main(String[] args) {
@@ -56,14 +55,16 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 
 	public void run(String... args) throws UnsupportedOperationException, SOAPException, IOException, Exception {
 
+		System.out.println("\n----JESUS is my GOD----");
+
 		Yaml yaml = new Yaml();
 		Reader yamlFile = new FileReader(
-				"C:\\Users\\SURESHGollamudi\\git\\dmsComponentTest\\dmsComponentTest\\src\\main\\resources\\application.yml");
+				"D:\\Users\\U.7898083-1\\git\\dmsComponentTest\\dmsComponentTest\\src\\main\\resources\\application2.yml");
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> yamlMaps = (Map<String, Object>) yaml.load(yamlFile);
 
-		System.out.println(yamlMaps.get("ReportDestination"));
+		// System.out.println(yamlMaps.get("ReportDestination"));
 
 		@SuppressWarnings("unchecked")
 		final List<Map<String, Object>> systemMapping = (List<Map<String, Object>>) yamlMaps.get("SystemMapping");
@@ -77,80 +78,107 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
 		SOAPConnection soapConnection = soapConnectionFactory.createConnection();
 
-		File wsdlDir = new File(BASEDIR, "src/main/resources/wsdls/99 Adapters");
+		File directory = new File(BASEDIR, "src/main/resources/wsdls/99 Assembled adapters 3.2.8.11");
+		File wsdlDir = null;
+		File file;
+		String[] wsdlNames;
+		String endpoint = null;
+		String soapenvelope = null;
+		String systemtocall = null;
+		boolean loopBack = false;
 
 		for (String env : envs) {
-			String[] wsdlNames;
-			wsdlNames = wsdlDir.list();
-			for (String wsdlName : wsdlNames) {
 
-				// Print the names of files and directories
-				System.out.println("\nService wsdlName: " + wsdlName);
-				File wsdlFile = new File(wsdlDir, wsdlName);
+			Iterator<File> iter = FileUtils.iterateFiles(directory, new String[] { "wsdl" }, true);
 
-				String endpoint = null;
-				String soapenvelope = null;
-				// for (String env : envs) {
+			while (iter.hasNext()) {
+				file = (File) iter.next();
+				System.out.println("\nWSDL Found: " + file.getName());
+				// System.out.println("file Path: " + file.getPath());
+				// System.out.println("file dir: " + file.getParent());
+				wsdlDir = new File(BASEDIR, file.getParent());
 
-				System.out.println("\nenv running: " + env);
+				// String[] wsdlNames;
+				wsdlNames = wsdlDir.list();
+				for (String wsdlName : wsdlNames) {
 
-				String systemtocall = null;
+					if (wsdlName.endsWith(".wsdl")) {
+						File wsdlFile = new File(wsdlDir, wsdlName);
 
-				for (Map.Entry<String, String> entry : myConfig.SystemMapping.entrySet()) {
-					String key = entry.getKey();
-					if (wsdlName.equalsIgnoreCase(key.substring(2))) {
-						String value = entry.getValue();
-						systemtocall = value;
-						// System.out.println("Matching found for: "+wsdlName);
-					}
+						outerloop: for (Map<String, Object> featureService : systemMapping) {
+							for (Map.Entry<String, Object> entry : featureService.entrySet()) {
+								// System.out.println("Key: " + entry.getKey());
+								String key = entry.getKey();
+								if (wsdlName.equalsIgnoreCase(key)) {
+									String value = (String) entry.getValue();
+									systemtocall = value;
+									loopBack = false;
+									break outerloop;
 
-				}
+								} else {
+									loopBack = true;
+								}
+							}
+						}
 
-				System.out.println("Env Executing for: " + env + ", System to call for " + wsdlName
-						+ " WSDL Service is: " + systemtocall + ", index of environment: " + envs.indexOf(env));
+						if (!loopBack) {
+							System.out.println("Env Executing for: " + env + "\nSystem to call for " + wsdlName
+									+ "\nWSDL Service is: " + systemtocall + "\nindex of environment: "
+									+ envs.indexOf(env));
 
-				endpoint = getEndPoint(env, envs.indexOf(env), systemtocall, yamlMaps);
+							endpoint = getEndPoint(env, envs.indexOf(env), systemtocall, yamlMaps);
+							if (!(endpoint == null)) {
+								String systemHostURI = systemtocall + "URI";
+								endpoint = endpoint + yamlMaps.get(systemHostURI);
 
-				String systemHostURI = systemtocall + "URI";
-				endpoint = endpoint + yamlMaps.get(systemHostURI);
+								System.out.println(
+										"Final Endpoint URL for: "+systemtocall+" = " + endpoint);
 
-				System.out.println("endpoint: " + endpoint + ", systemHostURI: " + yamlMaps.get("systemHostURI"));
+								List<Operation> operationList = getPortTypeOperations(wsdlFile.toURI().toString());
 
-				List<Operation> operationList = getPortTypeOperations(wsdlFile.toURI().toString());
+								System.out.println(
+										"Total Number of operations in " + wsdlName + " : " + operationList.size());
 
-				System.out.println("Total Number of operations in " + wsdlName + " : " + operationList.size());
+								for (Operation opname : operationList) {
 
-				for (Operation opname : operationList) {
+									soapenvelope = getRequestEnvelopeToString(opname.getName());
+									System.out.println("\nOperationName: " + opname.getName()
+											+ "\nis there a Request XML exists?: "
+											+ !soapenvelope.equalsIgnoreCase("empty"));
 
-					soapenvelope = getRequestEnvelopeToString(opname.getName());
-					System.out.println("\nOperationName: " + opname.getName() + "\nis there a Request XML exists?: "
-							+ !soapenvelope.equalsIgnoreCase("empty"));
+									if (!soapenvelope.equalsIgnoreCase("empty")) {
+										System.setProperty("java.net.useSystemProxies", "true");
+										System.out.println("SOAPenvelopetoString: " + soapenvelope);
 
-					if (!soapenvelope.equalsIgnoreCase("empty")) {
-						System.setProperty("java.net.useSystemProxies", "true");
-						System.out.println("SOAPenvelopetoString: " + soapenvelope);
+										System.out.println("SOAP endpoint to Call: " + endpoint);
 
-						System.out.println("SOAP endpoint to Call: " + endpoint);
+										InputStream is = new ByteArrayInputStream(soapenvelope.getBytes());
+										SOAPMessage request = MessageFactory.newInstance().createMessage(null, is);
+										MimeHeaders headers = request.getMimeHeaders();
 
-						InputStream is = new ByteArrayInputStream(soapenvelope.getBytes());
-						SOAPMessage request = MessageFactory.newInstance().createMessage(null, is);
-						MimeHeaders headers = request.getMimeHeaders();
+										headers.setHeader("Content-Type", "application/xml");
+										request.saveChanges();
 
-						headers.setHeader("Content-Type", "application/xml");
-						request.saveChanges();
+										SOAPMessage soapResponse = soapConnection.call(request, endpoint);
 
-						SOAPMessage soapResponse = soapConnection.call(request, endpoint);
+										// System.out.println(printSOAPResponse(soapResponse));
 
-						// System.out.println(printSOAPResponse(soapResponse));
+										TransformerFactory transformerFactory = TransformerFactory.newInstance();
+										Transformer transformer = transformerFactory.newTransformer();
+										Source sourceContent = soapResponse.getSOAPPart().getContent();
+										System.out.print("\nResponse SOAP Message = ");
+										StreamResult result = new StreamResult(System.out);
+										transformer.transform(sourceContent, result);
+									}
 
-						TransformerFactory transformerFactory = TransformerFactory.newInstance();
-						Transformer transformer = transformerFactory.newTransformer();
-						Source sourceContent = soapResponse.getSOAPPart().getContent();
-						System.out.print("\nResponse SOAP Message = ");
-						StreamResult result = new StreamResult(System.out);
-						transformer.transform(sourceContent, result);
+								}
+							} else {
+								System.out.println("No External System End Points are Configured for: " + systemtocall);
+							}
 
-						// System.out.println("Response Suresh: "+sourceContent);
+						} else {
+							System.out.println("No External System is configured for WSDL: " + wsdlName);
+						}
 					}
 
 				}
@@ -172,16 +200,23 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 
 		@SuppressWarnings("unchecked")
 		List<String> systemHosts = (List<String>) yamlMaps.get(systemHost);
-		System.out.println("index: " + index + ", " + systemHosts);
+		//System.out.println("index: " + index + ", " + systemHosts);
 
-		for (String host : systemHosts) {
-			System.out.println("index: " + systemHosts.indexOf(host));
-			if (index == systemHosts.indexOf(host)) {
-				// System.out.println("Called here"+systemHosts.indexOf(host));
-				System.out.println("hosts---: " + host);
-				endpoint = host;
+		if (systemHosts == null || systemHosts.isEmpty()) {
+			return endpoint;
+		} else {
+			if (!(systemHosts == null) || !(systemHosts.isEmpty())) {
+				for (String host : systemHosts) {
+					//System.out.println("index: " + systemHosts.indexOf(host));
+					if (index == systemHosts.indexOf(host)) {
+						// System.out.println("Called here"+systemHosts.indexOf(host));
+						//System.out.println("hosts---: " + host);
+						endpoint = host;
+					}
+
+				}
+				System.out.println("No of Endpoints configured for system : "+system+"=" + systemHosts.size());
 			}
-
 		}
 
 		return endpoint;
@@ -218,7 +253,6 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 			// pass the location/url to the reader for parsing and get list of operations
 			Definition wsdlInstance = reader.readWSDL(wsdlUrl);
 
-			@SuppressWarnings("unchecked")
 			Map<String, PortTypeImpl> defMap = wsdlInstance.getAllPortTypes();
 			Collection<PortTypeImpl> collection = defMap.values();
 			for (PortTypeImpl portType : collection) {
