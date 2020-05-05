@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -34,7 +35,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -46,6 +50,8 @@ import com.ibm.wsdl.PortTypeImpl;
 public class DmsComponentTestApplication implements CommandLineRunner {
 
 	private static final String BASEDIR = null;
+	//private static Object //TODO;
+	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	public static void main(String[] args) {
 		SpringApplication app = new SpringApplication(DmsComponentTestApplication.class);
@@ -53,13 +59,23 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		app.run();
 	}
 
+	@SuppressWarnings("deprecation")
 	public void run(String... args) throws UnsupportedOperationException, SOAPException, IOException, Exception {
 
+		logger.debug("This is a debug message");
+		logger.info("This is an info message");
+		logger.warn("This is a warn message");
+		logger.error("This is an error message");
+
 		System.out.println("\n----JESUS is my GOD----");
+		
+		//ReportBean bean = new ReportBean();
+		
+		//bean.getEnvironments();
 
 		Yaml yaml = new Yaml();
 		Reader yamlFile = new FileReader(
-				"D:\\Users\\U.7898083-1\\git\\dmsComponentTest\\dmsComponentTest\\src\\main\\resources\\application2.yml");
+				"D:\\Users\\U.7898083-1\\git\\dmsComponentTest\\dmsComponentTest\\src\\main\\resources\\application.yml");
 
 		@SuppressWarnings("unchecked")
 		Map<String, Object> yamlMaps = (Map<String, Object>) yaml.load(yamlFile);
@@ -131,8 +147,7 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 								String systemHostURI = systemtocall + "URI";
 								endpoint = endpoint + yamlMaps.get(systemHostURI);
 
-								System.out.println(
-										"Final Endpoint URL for: "+systemtocall+" = " + endpoint);
+								System.out.println("Final Endpoint URL for: " + systemtocall + " = " + endpoint);
 
 								List<Operation> operationList = getPortTypeOperations(wsdlFile.toURI().toString());
 
@@ -142,9 +157,26 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 								for (Operation opname : operationList) {
 
 									soapenvelope = getRequestEnvelopeToString(opname.getName());
-									System.out.println("\nOperationName: " + opname.getName()
-											+ "\nis there a Request XML exists?: "
-											+ !soapenvelope.equalsIgnoreCase("empty"));
+									/*
+									 * System.out.println("\nOperationName: " + opname.getName() +
+									 * "\nis there a Request XML exists?: " +
+									 * !soapenvelope.equalsIgnoreCase("empty"));
+									 */
+
+									File htmlTemplateFile = new File("src/main/resources/Report.html");
+									System.out.println("testtt: " + htmlTemplateFile.getName());
+
+									String htmlString = FileUtils.readFileToString(htmlTemplateFile, "UTF-8");
+									String title = "New Page";
+									
+									String body = "<div class=\"container\"><table><thead><tr><th>Column 1</th><th>Column 2</th><th>Column 3</th><th>Column 4</th><th>Column 5</th></tr></thead><tbody><tr><td>Cell 1</td><td>Cell 2</td><td>Cell 3</td><td>Cell 4</td><td>Cell 5</td></tr><tr><td>Cell 1</td><td>Cell 2</td><td>Cell 3</td><td>Cell 4</td><td>Cell 5</td></tr><tr><td>Cell 1</td><td>Cell 2</td><td>Cell 3</td><td>Cell 4</td><td>Cell 5</td></tr><tr><td>Cell 1</td><td>Cell 2</td><td>Cell 3</td><td>Cell 4</td><td>Cell 5</td></tr><tr><td>Cell 1</td><td>Cell 2</td><td>Cell 3</td><td>Cell 4</td><td>Cell 5</td></tr></tbody></table></div>";
+									//String body = soapenvelope;
+									htmlString = htmlString.replace("$title", title);
+									htmlString = htmlString.replace("$body", body);
+									File newHtmlFile = new File("src/main/resources/new.html");
+									FileUtils.writeStringToFile(newHtmlFile, htmlString, "UTF-8");
+									System.out.println(
+											"Got Bodyyyy: " + FileUtils.readFileToString(newHtmlFile, "UTF-8"));
 
 									if (!soapenvelope.equalsIgnoreCase("empty")) {
 										System.setProperty("java.net.useSystemProxies", "true");
@@ -167,8 +199,10 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 										Transformer transformer = transformerFactory.newTransformer();
 										Source sourceContent = soapResponse.getSOAPPart().getContent();
 										System.out.print("\nResponse SOAP Message = ");
+										System.out.print("\n");
 										StreamResult result = new StreamResult(System.out);
 										transformer.transform(sourceContent, result);
+
 									}
 
 								}
@@ -200,22 +234,22 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 
 		@SuppressWarnings("unchecked")
 		List<String> systemHosts = (List<String>) yamlMaps.get(systemHost);
-		//System.out.println("index: " + index + ", " + systemHosts);
+		// System.out.println("index: " + index + ", " + systemHosts);
 
 		if (systemHosts == null || systemHosts.isEmpty()) {
 			return endpoint;
 		} else {
 			if (!(systemHosts == null) || !(systemHosts.isEmpty())) {
 				for (String host : systemHosts) {
-					//System.out.println("index: " + systemHosts.indexOf(host));
+					// System.out.println("index: " + systemHosts.indexOf(host));
 					if (index == systemHosts.indexOf(host)) {
 						// System.out.println("Called here"+systemHosts.indexOf(host));
-						//System.out.println("hosts---: " + host);
+						// System.out.println("hosts---: " + host);
 						endpoint = host;
 					}
 
 				}
-				System.out.println("No of Endpoints configured for system : "+system+"=" + systemHosts.size());
+				System.out.println("No of Endpoints configured for system : " + system + "=" + systemHosts.size());
 			}
 		}
 
@@ -275,5 +309,11 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		}
 		return contentBuilder.toString();
 	}
+	
+	private static void generateHTMLfile () {
+		//TODO
+	}
+	
+	
 
 }

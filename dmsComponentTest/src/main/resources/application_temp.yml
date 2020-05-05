@@ -1,0 +1,48 @@
+spring: null
+Environments:
+    - dit1
+    - dit2
+    - dit3
+PDSURI: /calculator.asmx
+XRSURI: /webservicesserver/numberconversion.wso
+TariffURI: /converter.asmx
+ILMSURI: lll
+PDSHosts:
+    - 'http://www.dneonline.com'
+    - 'http://www.dneonline.com1'
+    - dit3
+    - dit4
+    - dit5
+    - dit6
+XRSHosts:
+    - 'http://www.dataaccess.com'
+    - 'http://www.dataaccess.com1'
+    - dit3
+    - dit4
+    - dit5
+    - dit6
+TariffHosts:
+    - 'http://currencyconverter.kowabunga.net'
+    - dit2
+    - dit3
+    - dit4
+    - dit5
+    - dit6
+ILMSHosts:
+    - dit1
+    - dit2
+    - dit3
+    - dit4
+    - dit5
+    - dit6
+ReportDestination: frfrfrf
+
+SystemMapping:
+    - calculator_1.wsdl: PDS
+    - numberconversion_1.wsdl: XRS
+    - converter_1.wsdl: Tariff
+    - test: ILMS
+
+    
+    
+    
