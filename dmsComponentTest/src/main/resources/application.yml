@@ -1,6 +1,6 @@
 spring:
-  main:
-    banner-mode: "off"
+   main:
+      banner-mode: 'off'
 logging:
    file: logs/Final_Report.log
    pattern:
@@ -12,6 +12,7 @@ logging:
       root: WARN
 Environments:
 - dit1
+- dit2
 #- dit2
 PDSURI: /DMSTraderService
 XRSURI: /ExchangeRateService
@@ -51,8 +52,8 @@ ILMSHosts:
 - dit6
 SPSHosts:
 - http://bolt-sps-lb-1.delivery-team-cds-r1.n.cit.corp.hmrc.gov.uk:8030
-- http://bolt-auth-lb-1.delivery-team-cds-r2.n.cit.corp.hmrc.gov.uk:8110
-- http://bolt-auth-lb-1.delivery-team-cds-r3.n.cit.corp.hmrc.gov.uk:8110
+- http://bolt-sps-lb-1.delivery-team-cds-r2.n.cit.corp.hmrc.gov.uk:8030
+- http://bolt-sps-lb-1.delivery-team-cds-r3.n.cit.corp.hmrc.gov.uk:8030
 - dit4
 - dit5
 - dit6
@@ -66,9 +67,13 @@ RDSHosts:
 ReportDestination: frfrfrf
 SystemMapping:
 -  PartyManagementServiceSOAP.wsdl: PDS
+-  GuaranteeManagementServiceSOAP_v2.wsdl: SPS
 #- AuthorizationManagementServiceSOAP_v2.wsdl: ILMS
 # ----------------
 # Orphan comments:
 # ----------------
-# Was at begin of line:72 :#- converter_1.wsdl: TEST
-# Was at begin of line:73 :#-test: TEST
+# Was at begin of line:71 :# ----------------
+# Was at begin of line:72 :# Orphan comments:
+# Was at begin of line:73 :# ----------------
+# Was at begin of line:74 :# Was at begin of line:72 :#- converter_1.wsdl: TEST
+# Was at begin of line:75 :# Was at begin of line:73 :#-test: TEST
