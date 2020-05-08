@@ -13,6 +13,7 @@ logging:
 Environments:
 - dit1
 - dit2
+- dit3
 #- dit2
 PDSURI: /DMSTraderService
 XRSURI: /ExchangeRateService
@@ -67,8 +68,8 @@ RDSHosts:
 ReportDestination: frfrfrf
 SystemMapping:
 -  PartyManagementServiceSOAP.wsdl: PDS
--  GuaranteeManagementServiceSOAP_v2.wsdl: SPS
-#- AuthorizationManagementServiceSOAP_v2.wsdl: ILMS
+- GuaranteeManagementServiceSOAP_v2.wsdl: SPS
+- AuthorizationManagementServiceSOAP_v2.wsdl: ILMS
 # ----------------
 # Orphan comments:
 # ----------------

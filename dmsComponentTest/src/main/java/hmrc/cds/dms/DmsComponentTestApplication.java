@@ -88,47 +88,69 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		@SuppressWarnings("unchecked")
 		List<String> envs = (List<String>) yamlMaps.get("Environments");
 
-		SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
-		SOAPConnection soapConnection = soapConnectionFactory.createConnection();
-
 		File directory = new File(BASEDIR, "src/main/resources/wsdls/99 Assembled adapters 3.2.8.11");
 		File wsdlDir = null;
 		File file;
 		String[] wsdlNames;
+
+		List<OperationName> operationNames = new ArrayList<OperationName>();
+		List<OperationName> rempOperationNames = new ArrayList<OperationName>();
+		List<ServiceName> serviceNames = new ArrayList<ServiceName>();
+		List<ReportBean> rb = new ArrayList<ReportBean>();
+
+		List<String> list = new ArrayList<String>();
+
 		String endpoint = null;
 		String soapenvelope = null;
 		String systemtocall = null;
 		boolean loopBack = false;
 
-		List<OperationName> operationNames = new ArrayList<OperationName>();
-		List<ServiceName> serviceNames = new ArrayList<ServiceName>();
-		List<ReportBean> rb = new ArrayList<ReportBean>();
-
+		Iterator<File> iter = FileUtils.iterateFiles(directory, new String[] { "wsdl" }, true);
 		for (String env : envs) {
 
-			Iterator<File> iter = FileUtils.iterateFiles(directory, new String[] { "wsdl" }, true);
+			ReportBean reportBean = new ReportBean();
 
 			while (iter.hasNext()) {
+
 				file = (File) iter.next();
-				System.out.println("\nWSDL Found: " + file.getName());
+				// System.out.println("\nLOOP2: " + ii++ + ", path: " + file.getParent());
+				// System.out.println("\nWSDL Found: " + file.getName());
 				// System.out.println("file Path: " + file.getPath());
 				// System.out.println("file dir: " + file.getParent());
 				wsdlDir = new File(BASEDIR, file.getParent());
 
-				// String[] wsdlNames;
-				wsdlNames = wsdlDir.list();
-				for (String wsdlName : wsdlNames) {
+				Iterator<File> itr = FileUtils.iterateFiles(wsdlDir, new String[] { "wsdl" }, false);
+				while (itr.hasNext()) {
+					file = (File) itr.next();
 
-					if (wsdlName.endsWith(".wsdl")) {
-						File wsdlFile = new File(wsdlDir, wsdlName);
+					/*
+					 * System.out.println("\nWSDL Found: " + file.getName());
+					 * System.out.println("file Path: " + file.getPath());
+					 * System.out.println("file dir: " + file.getParent());
+					 */
+
+					File wsdlFile = new File(wsdlDir, file.getPath());
+
+					/*
+					 * if(!operationNames.isEmpty()) {
+					 * 
+					 * rempOperationNames.addAll(operationNames);
+					 * operationNames.removeAll(operationNames); }
+					 */
+
+					if (!list.contains(wsdlFile.getName())) {
+						// System.out.println("wsdlFile: "+wsdlFile.toURI());
 
 						outerloop: for (Map<String, Object> featureService : systemMapping) {
 							for (Map.Entry<String, Object> entry : featureService.entrySet()) {
-								// System.out.println("Key: " + entry.getKey());
+								// System.out.println("Key: " + entry.getKey()+", wsdlName:
+								// "+wsdlFile.getName());
 								String key = entry.getKey();
-								if (wsdlName.equalsIgnoreCase(key)) {
+								if (wsdlFile.getName().equalsIgnoreCase(key)) {
+									System.out.println("Key: " + entry.getKey() + ", wsdlName: " + wsdlFile.getName());
 									String value = (String) entry.getValue();
 									systemtocall = value;
+									list.add(wsdlFile.getName());
 									loopBack = false;
 									break outerloop;
 
@@ -138,10 +160,12 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 							}
 						}
 
+						System.out.println("Eissssss: " + list + ", \n" + list.contains(wsdlFile.getName()));
+
 						if (!loopBack) {
-							System.out.println("Env Executing for: " + env + "\nSystem to call for " + wsdlName
-									+ "\nWSDL Service is: " + systemtocall + "\nindex of environment: "
-									+ envs.indexOf(env));
+							System.out.println("Env Executing for: " + env + "\nSystem to call for "
+									+ wsdlFile.getName() + "\nWSDL Service is: " + systemtocall
+									+ "\nindex of environment: " + envs.indexOf(env));
 
 							endpoint = getEndPoint(env, envs.indexOf(env), systemtocall, yamlMaps);
 							if (!(endpoint == null)) {
@@ -150,103 +174,54 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 
 								System.out.println("Final Endpoint URL for: " + systemtocall + " = " + endpoint);
 
-								List<Operation> operationList = getPortTypeOperations(wsdlFile.toURI().toString());
+								List<Operation> operationList = getPortTypeOperations(file.getPath());
 
-								System.out.println(
-										"Total Number of operations in " + wsdlName + " : " + operationList.size());
+								System.out.println("Total Number of operations in " + wsdlFile.getName() + " : "
+										+ operationList.size());
 
 								// List<OperationName> operationNames = new ArrayList<OperationName>();
+								ServiceName services = new ServiceName();
 
-								for (Operation opname : operationList) {
-									//System.out.println("List of Operations: " +opname.getName() );
-									//System.out.println("---Started Looking for Request XMLs---");
+								operationNames = getOperations(operationList, endpoint);
+								services = new ServiceName();
+								services.setSystemName(systemtocall);
+								services.setServiceName(wsdlFile.getName());
+								services.setOperationNames(operationNames);
 
-									soapenvelope = getRequestEnvelopeToString(opname.getName());
+								serviceNames.add(services);
+								rempOperationNames.removeAll(rempOperationNames);
+								System.out.println("serviceName Added successfully" + services);
 
-									if (!soapenvelope.equalsIgnoreCase("empty")) {
+								/*
+								 * services = new ServiceName(); services.setSystemName(systemtocall);
+								 * services.setServiceName(wsdlFile.getName());
+								 * services.setOperationNames(rempOperationNames);
+								 * 
+								 * serviceNames.add(services); rempOperationNames.removeAll(rempOperationNames);
+								 * System.out.println("serviceName Added successfully" + services);
+								 */
 
-										System.out.println("Request XML available for Operation: " + opname.getName());
-										System.setProperty("java.net.useSystemProxies", "true");
-										System.out.println("SOAP Request Payload: " + soapenvelope);
-
-										System.out.println("SOAP endpoint to Call: " + endpoint);
-
-										InputStream is = new ByteArrayInputStream(soapenvelope.getBytes());
-										SOAPMessage request = MessageFactory.newInstance().createMessage(null, is);
-										MimeHeaders headers = request.getMimeHeaders();
-
-										headers.setHeader("Content-Type", "application/xml");
-										request.saveChanges();
-
-										SOAPMessage soapResponse = soapConnection.call(request, endpoint);
-
-										// System.out.println(printSOAPResponse(soapResponse));
-										// ByteArrayOutputStream streamOut = new ByteArrayOutputStream();
-
-										StringWriter sw = new StringWriter();
-
-										try {
-											TransformerFactory transformerFactory = TransformerFactory.newInstance();
-											Transformer transformer = transformerFactory.newTransformer();
-											Source sourceContent = soapResponse.getSOAPPart().getContent();
-
-											System.out.print("\nResponse SOAP Message = ");
-											System.out.print("\n");
-											// StreamResult result = new StreamResult(System.out);
-											StreamResult result = new StreamResult(sw);
-											transformer.transform(sourceContent, result);
-
-										} catch (TransformerException e) {
-											throw new RuntimeException(e);
-										}
-
-										OperationName operationName = new OperationName();
-										operationName.setOperationName(opname.getName());
-
-										if (!soapResponse.getSOAPBody().hasFault()) {
-											operationName.setStatus("Running");
-										} else {
-											operationName.setStatus("  Down ");
-										}
-										operationName.setResponse(sw.toString());
-
-										operationNames.add(operationName);
-										System.out.println("operationName Added successfully"+operationName);
-
-										// System.out.println("\noperationNames: " + operationNames);
-
-										ServiceName services = new ServiceName();
-										services.setSystemName(systemtocall);
-										services.setServiceName(wsdlName);
-										services.setOperationNames(operationNames);
-										serviceNames.add(services);
-										System.out.println("serviceName Added successfully"+services);
-
-										ReportBean reportBean = new ReportBean();
-										reportBean.setEnvName(env);
-										reportBean.setServiceNames(serviceNames);
-										rb.add(reportBean);
-										System.out.println("ReportBean Added successfully"+reportBean);
-
-									}else {
-										System.out.println("No Request XML is provided for: "+opname.getName());
-									}
-
-								}
 							} else {
 								System.out.println("No External System End Points are Configured for: " + systemtocall);
 							}
 
 						} else {
-							System.out.println("No External System is configured for WSDL: " + wsdlName);
+							System.out.println("No External System is configured for WSDL: " + wsdlFile.getName());
 						}
 					}
 
 				}
-
 			}
+			reportBean.setEnvName(env);
+			reportBean.setServiceNames(serviceNames);
+			rb.add(reportBean);
+			// System.out.println("ReportBean Added successfully" + reportBean);
 
 		}
+
+		System.out.println("temp list:" + list);
+		// System.out.println("ReportBean Added successfully" + rb);
+
 		System.out.println("LOGGGGGGGGGGGGGGG");
 		System.out.println("operationNames: " + operationNames);
 		System.out.println("serviceNames: " + serviceNames);
@@ -257,7 +232,7 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 	}
 
 	private void generateHTMLfile(List<ReportBean> rb) throws IOException {
-		
+
 		System.out.println("JESUS is MY LORD");
 
 		File htmlTemplateFile = new File("src/main/resources/Report2.html");
@@ -265,7 +240,7 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		String htmlString = FileUtils.readFileToString(htmlTemplateFile, "UTF-8");
 
 		String title = "New Page";
-		
+
 		String body = "";
 
 		String tag1 = "<section>  <h1>";
@@ -308,8 +283,6 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 
 		// tag8+op.getResponse()+tag9
 
-		
-
 		StringBuilder builder = new StringBuilder();
 
 		for (ReportBean r : rb) {
@@ -318,17 +291,18 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 			StringBuilder localBuilder = new StringBuilder();
 			for (ServiceName sn : r.getServiceNames()) {
 				for (OperationName op : sn.getOperationNames()) {
-					String sname = sn.getServiceName().substring(0, sn.getServiceName().lastIndexOf(".")).replaceAll("\\SOAP.*?\\b", "");
+					String sname = sn.getServiceName().substring(0, sn.getServiceName().lastIndexOf("."))
+							.replaceAll("\\SOAP.*?\\b", "");
 					String color = null;
-					if(op.getStatus().equalsIgnoreCase("Running")) {
+					if (op.getStatus().equalsIgnoreCase("Running")) {
 						color = green + op.getStatus() + tag7;
-					}else {
+					} else {
 						color = red + op.getStatus() + tag7;
 					}
-					//String cc = "<div class=\"content\">"+op.getResponse()+"</div>";
+					// String cc = "<div class=\"content\">"+op.getResponse()+"</div>";
 					String cc = "<div class=\"content\">Testing</div>";
-					dataToLoad = tag4 + sn.getSystemName() + tag6 + sname + tag6 + op.getOperationName()
-							+ tag6 + color + tag6 + tag8 + "Response" + "</button>" + cc + tag5;
+					dataToLoad = tag4 + sn.getSystemName() + tag6 + sname + tag6 + op.getOperationName() + tag6 + color
+							+ tag6 + tag8 + "Response" + "</button>" + cc + tag5;
 					localBuilder.append(dataToLoad);
 				}
 			}
@@ -434,6 +408,90 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 			e.printStackTrace();
 		}
 		return contentBuilder.toString();
+	}
+
+	public List<OperationName> getOperations(List<Operation> operationList, String endpoint)
+			throws UnsupportedOperationException, SOAPException, IOException {
+
+		// String endpoint = null;
+		String soapenvelope = null;
+		String systemtocall = null;
+		boolean loopBack = false;
+
+		SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
+		SOAPConnection soapConnection = soapConnectionFactory.createConnection();
+
+		OperationName operationName = new OperationName();
+		List<OperationName> operationNames = new ArrayList<OperationName>();
+		List<ServiceName> serviceNames = new ArrayList<ServiceName>();
+		int i = 0;
+		for (Operation opname : operationList) {
+			System.out.println("List of Operations: " + opname.getName());
+			// System.out.println("---Started Looking for Request XMLs---");
+
+			soapenvelope = getRequestEnvelopeToString(opname.getName());
+
+			if (!soapenvelope.equalsIgnoreCase("empty")) {
+
+				System.out.println("Request XML available for Operation: " + opname.getName());
+				System.setProperty("java.net.useSystemProxies", "true");
+				System.out.println("SOAP Request Payload: " + soapenvelope);
+
+				System.out.println("SOAP endpoint to Call: " + endpoint);
+
+				InputStream is = new ByteArrayInputStream(soapenvelope.getBytes());
+				SOAPMessage request = MessageFactory.newInstance().createMessage(null, is);
+				MimeHeaders headers = request.getMimeHeaders();
+
+				headers.setHeader("Content-Type", "application/xml");
+				request.saveChanges();
+
+				SOAPMessage soapResponse = soapConnection.call(request, endpoint);
+
+				// System.out.println(printSOAPResponse(soapResponse));
+				// ByteArrayOutputStream streamOut = new ByteArrayOutputStream();
+
+				StringWriter sw = new StringWriter();
+
+				try {
+					TransformerFactory transformerFactory = TransformerFactory.newInstance();
+					Transformer transformer = transformerFactory.newTransformer();
+					Source sourceContent = soapResponse.getSOAPPart().getContent();
+
+					System.out.print("\nResponse SOAP Message = ");
+					System.out.print("\n");
+					// StreamResult result = new StreamResult(System.out);
+					StreamResult result = new StreamResult(sw);
+					transformer.transform(sourceContent, result);
+
+				} catch (TransformerException e) {
+					throw new RuntimeException(e);
+				}
+
+				operationName = new OperationName();
+				operationName.setOperationName(opname.getName());
+
+				if (!soapResponse.getSOAPBody().hasFault()) {
+					operationName.setStatus("Running");
+				} else {
+					operationName.setStatus("  Down ");
+				}
+				// operationName.setResponse(sw.toString());
+				operationName.setResponse("TEST" + i++);
+				operationNames.add(operationName);
+				System.out.println("operationName Added successfully" + operationNames);
+
+				// System.out.println("\noperationNames: " + operationNames);
+
+				// reportBean.setEnvName(env);
+
+			} else {
+				System.out.println("No Request XML is provided for: " + opname.getName());
+			}
+
+		}
+
+		return operationNames;
 	}
 
 }
