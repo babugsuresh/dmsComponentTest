@@ -105,10 +105,17 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 		String systemtocall = null;
 		boolean loopBack = false;
 
-		Iterator<File> iter = FileUtils.iterateFiles(directory, new String[] { "wsdl" }, true);
+		boolean isnextenv = false;
 		for (String env : envs) {
+			System.out.println("Test env: " + env);
+			Iterator<File> iter = FileUtils.iterateFiles(directory, new String[] { "wsdl" }, true);
 
 			ReportBean reportBean = new ReportBean();
+
+			if (!list.isEmpty()) {
+				list.removeAll(list);
+
+			}
 
 			while (iter.hasNext()) {
 
@@ -168,6 +175,7 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 									+ "\nindex of environment: " + envs.indexOf(env));
 
 							endpoint = getEndPoint(env, envs.indexOf(env), systemtocall, yamlMaps);
+							ServiceName services = new ServiceName();
 							if (!(endpoint == null)) {
 								String systemHostURI = systemtocall + "URI";
 								endpoint = endpoint + yamlMaps.get(systemHostURI);
@@ -180,18 +188,8 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 										+ operationList.size());
 
 								// List<OperationName> operationNames = new ArrayList<OperationName>();
-								ServiceName services = new ServiceName();
 
 								operationNames = getOperations(operationList, endpoint);
-								services = new ServiceName();
-								services.setSystemName(systemtocall);
-								services.setServiceName(wsdlFile.getName());
-								services.setOperationNames(operationNames);
-
-								serviceNames.add(services);
-								rempOperationNames.removeAll(rempOperationNames);
-								System.out.println("serviceName Added successfully" + services);
-
 								/*
 								 * services = new ServiceName(); services.setSystemName(systemtocall);
 								 * services.setServiceName(wsdlFile.getName());
@@ -205,16 +203,37 @@ public class DmsComponentTestApplication implements CommandLineRunner {
 								System.out.println("No External System End Points are Configured for: " + systemtocall);
 							}
 
+							services = new ServiceName();
+
+							services = new ServiceName();
+							services.setSystemName(systemtocall);
+							services.setServiceName(wsdlFile.getName() + env);
+							services.setOperationNames(operationNames);
+
+							serviceNames.add(services);
+							// rempOperationNames.removeAll(rempOperationNames);
+							System.out.println("serviceName Added successfully" + services + env);
+
 						} else {
 							System.out.println("No External System is configured for WSDL: " + wsdlFile.getName());
 						}
+
 					}
 
 				}
+
 			}
+
+			List<ServiceName> tempServiceList = new ArrayList<ServiceName>();
+
+			tempServiceList.addAll(serviceNames);
+
+			reportBean = new ReportBean();
 			reportBean.setEnvName(env);
-			reportBean.setServiceNames(serviceNames);
+			reportBean.setServiceNames(tempServiceList);
 			rb.add(reportBean);
+			serviceNames.removeAll(serviceNames);
+
 			// System.out.println("ReportBean Added successfully" + reportBean);
 
 		}

@@ -1,0 +1,12 @@
+2020-05-05 19:20:04,409 INFO  [main] hmrc.cds.dms.DmsComponentTestApplicationTests : Starting DmsComponentTestApplicationTests on EC2AMAZ-JQIO69N with PID 1948 (started by U.7898083-1 in D:\Users\U.7898083-1\git\dmsComponentTest\dmsComponentTest)
+2020-05-05 19:20:04,411 INFO  [main] hmrc.cds.dms.DmsComponentTestApplicationTests : No active profile set, falling back to default profiles: default
+2020-05-05 19:20:05,147 INFO  [main] hmrc.cds.dms.DmsComponentTestApplicationTests : Started DmsComponentTestApplicationTests in 1.234 seconds (JVM running for 2.672)
+2020-05-05 19:20:05,148 INFO  [main] hmrc.cds.dms.DmsComponentTestApplication$$EnhancerBySpringCGLIB$$c9a9832d : This is an info message
+2020-05-05 19:20:05,151 WARN  [main] hmrc.cds.dms.DmsComponentTestApplication$$EnhancerBySpringCGLIB$$c9a9832d : This is a warn message
+2020-05-05 19:20:05,151 ERROR [main] hmrc.cds.dms.DmsComponentTestApplication$$EnhancerBySpringCGLIB$$c9a9832d : This is an error message
+19:29:36.375 [main] INFO  h.c.d.DmsComponentTestApplicationTests - Starting DmsComponentTestApplicationTests on EC2AMAZ-JQIO69N with PID 3516 (started by U.7898083-1 in D:\Users\U.7898083-1\git\dmsComponentTest\dmsComponentTest)
+19:29:36.377 [main] INFO  h.c.d.DmsComponentTestApplicationTests - No active profile set, falling back to default profiles: default
+19:29:37.105 [main] INFO  h.c.d.DmsComponentTestApplicationTests - Started DmsComponentTestApplicationTests in 1.38 seconds (JVM running for 3.408)
+19:29:37.106 [main] INFO  h.c.d.DmsComponentTestApplication$$EnhancerBySpringCGLIB$$8c889f6 - This is an info message
+19:29:37.106 [main] WARN  h.c.d.DmsComponentTestApplication$$EnhancerBySpringCGLIB$$8c889f6 - This is a warn message
+19:29:37.106 [main] ERROR h.c.d.DmsComponentTestApplication$$EnhancerBySpringCGLIB$$8c889f6 - This is an error message
